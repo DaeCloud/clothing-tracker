@@ -1,5 +1,6 @@
 let allLocations = [];
 let allColours = [];
+let allMainColours = [];
 let allTypes = [];
 let usedTypes = [];
 
@@ -28,7 +29,7 @@ function getBase64(file, callback, quality = 0.5, maxDimension = 512) {
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      
+
       // Set canvas dimensions to the new calculated dimensions
       canvas.width = width;
       canvas.height = height;
@@ -74,7 +75,7 @@ function invertColor(hex, bw) {
   return "#" + padZero(r) + padZero(g) + padZero(b);
 }
 
-function idToHexColor(id){
+function idToHexColor(id) {
   let hash = 0;
   const str = id.toString();
 
@@ -83,7 +84,7 @@ function idToHexColor(id){
   }
 
   let color = "#";
-  for(let i = 0; i < 3; i++){
+  for (let i = 0; i < 3; i++) {
     const value = (hash >> (i * 8)) & 0xFF;
     color += ("00" + value.toString(16)).slice(-2);
   }
@@ -105,42 +106,93 @@ function loadClothingList() {
           allColours = allColours.sort();
         }
 
-        if(!usedTypes.includes(item.type)){
+        if (!usedTypes.includes(item.type)) {
           usedTypes.push(item.type);
+        }
+
+        if (!allMainColours.includes(item.closest_color)) {
+          allMainColours.push(item.closest_color);
         }
 
         const div = document.createElement("div");
         div.setAttribute("data-location", item.location_name);
         div.setAttribute("data-type", item.type);
         div.setAttribute("data-id", item.id);
+        div.setAttribute("data-color", item.closest_color);
         div.classList =
           "col-6 col-sm-6 col-md-4 col-lg-3 col-xl-2 mb-2 clothingItem";
         div.innerHTML = `
         <div class="card">
-                    <img src="${item.image}" class="card-img-top" alt="${
-          item.name
-        }">
+                    <img src="${item.image}" class="card-img-top" alt="${item.name
+          }">
                     <div class="card-body">
                         <h5 class="card-title">${item.name}</h5>
                         <p class="card-text">
-                            Type: <span class="badge rounded-pill" style="background-color: ${idToHexColor(item.type)}; color: ${invertColor(idToHexColor(item.type), true)}">${
-                              item.type
-                            }</span><br />
-                            Colour: <span class="badge rounded-pill" style="background-color: ${
-                              item.color
-                            }; color: ${invertColor(item.color, true)}">${
-          item.color_name
-        }</span>
+                            Type: <span class="badge rounded-pill" style="background-color: ${idToHexColor(item.type)}; color: ${invertColor(idToHexColor(item.type), true)}">${item.type
+          }</span><br />
+                            Colour: <span class="badge rounded-pill" style="background-color: ${item.color
+          }; color: ${invertColor(item.color, true)}">${item.color_name
+          }</span>
                         </p>
                     </div>
 
-                    <span class="badge rounded-pill m-2" style="background-color: ${idToHexColor(item.location_name)}; color: ${invertColor(idToHexColor(item.location_name), true)}">${
-                      item.location_name
-                    }</span>
+                    <span class="badge rounded-pill m-2" style="background-color: ${idToHexColor(item.location_name)}; color: ${invertColor(idToHexColor(item.location_name), true)}">${item.location_name
+          }</span>
                 </div>
                 `;
         clothingList.appendChild(div);
       });
+
+      const filterMenu = document.getElementById("filterMenuColour");
+
+      filterMenu.innerHTML = `
+                <li><a class="dropdown-item disabled" href="#">Colour</a></li>`;
+
+      allMainColours.forEach((colour) => {
+        const li = document.createElement("li");
+
+        const div = document.createElement("div");
+        div.classList.add("form-check", "m-2");
+
+        const input = document.createElement("input");
+        input.classList.add("form-check-input", "filter-input");
+        input.type = "checkbox";
+        input.value = colour;
+        input.id = colour + "Check";
+        input.checked = true;
+
+        input.onchange = function (event) {
+          event.preventDefault();
+
+          let elements = document.querySelectorAll(".clothingItem");
+
+          for (let i = 0; i < elements.length; i++) {
+            if (elements[i].getAttribute("data-color") == colour) {
+              if (input.checked) {
+                elements[i].classList.remove("hidden-location");
+              } else {
+                elements[i].classList.add("hidden-location");
+              }
+            }
+          }
+        };
+
+        const label = document.createElement("label");
+        label.classList.add("form-check-label");
+        label.setAttribute("for", colour + "Check");
+        label.innerHTML = `<span class="badge rounded-pill" style="background-color: ${colour}; color: ${colour == "Purple" || colour == "Black" || colour == "Brown" ? "white" : "black"}">${colour}</span>`; // Set the text inside the label
+
+        // Append input and label to div
+        div.appendChild(input);
+        div.appendChild(label);
+
+        // Append div to li
+        li.appendChild(div);
+
+        // Append li to the desired parent (assuming ul exists with id "filterMenu")
+        filterMenu.appendChild(li);
+      })
+
 
       loadLocations();
     });
@@ -261,55 +313,55 @@ function loadTypes() {
         option.textContent = type.name;
         typesSelect.appendChild(option);
 
-        if(usedTypes.includes(type.name)) {
+        if (usedTypes.includes(type.name)) {
           // Create <li> element
-        const li = document.createElement("li");
+          const li = document.createElement("li");
 
-        // // Create <div> with class "form-check m-2"
-        const div = document.createElement("div");
-        div.classList.add("form-check", "m-2");
+          // // Create <div> with class "form-check m-2"
+          const div = document.createElement("div");
+          div.classList.add("form-check", "m-2");
 
-        // // Create <input> element with class, type, value, id, and checked attribute
-        const input = document.createElement("input");
-        input.classList.add("form-check-input", "filter-input");
-        input.type = "checkbox";
-        input.value = type.name;
-        input.id = type.name + "Check";
-        input.checked = true;
+          // // Create <input> element with class, type, value, id, and checked attribute
+          const input = document.createElement("input");
+          input.classList.add("form-check-input", "filter-input");
+          input.type = "checkbox";
+          input.value = type.name;
+          input.id = type.name + "Check";
+          input.checked = true;
 
-        input.onchange = function (event) {
-          event.preventDefault();
+          input.onchange = function (event) {
+            event.preventDefault();
 
-          let elements = document.querySelectorAll(".clothingItem");
+            let elements = document.querySelectorAll(".clothingItem");
 
-          for (let i = 0; i < elements.length; i++) {
-            if (elements[i].getAttribute("data-type") == type.name) {
-              if (input.checked) {
-                elements[i].classList.remove("hidden-type");
-              } else {
-                elements[i].classList.add("hidden-type");
+            for (let i = 0; i < elements.length; i++) {
+              if (elements[i].getAttribute("data-type") == type.name) {
+                if (input.checked) {
+                  elements[i].classList.remove("hidden-type");
+                } else {
+                  elements[i].classList.add("hidden-type");
+                }
               }
             }
-          }
-        };
+          };
 
-        // Create <label> element with class and for attribute
-        const label = document.createElement("label");
-        label.classList.add("form-check-label");
-        label.setAttribute("for", type.name + "Check");
-        label.innerHTML = `<span class="badge rounded-pill" style="background-color: ${idToHexColor(type.name)}; color: ${invertColor(idToHexColor(type.name), true)}">${type.name}</span>`; // Set the text inside the label
+          // Create <label> element with class and for attribute
+          const label = document.createElement("label");
+          label.classList.add("form-check-label");
+          label.setAttribute("for", type.name + "Check");
+          label.innerHTML = `<span class="badge rounded-pill" style="background-color: ${idToHexColor(type.name)}; color: ${invertColor(idToHexColor(type.name), true)}">${type.name}</span>`; // Set the text inside the label
 
-        // // Append input and label to div
-        div.appendChild(input);
-        div.appendChild(label);
+          // // Append input and label to div
+          div.appendChild(input);
+          div.appendChild(label);
 
-        // // Append div to li
-        li.appendChild(div);
+          // // Append div to li
+          li.appendChild(div);
 
-        // // Append li to the desired parent (assuming ul exists with id "filterMenu")
-        filterMenu.appendChild(li);
+          // // Append li to the desired parent (assuming ul exists with id "filterMenu")
+          filterMenu.appendChild(li);
         }
-        
+
       });
     });
 }
@@ -359,6 +411,8 @@ document
                 document.getElementById("color").value = "";
                 document.getElementById("location").value = "Location";
                 document.getElementById("image").value = "";
+                document.getElementById("imagePreview").src = "";
+                document.getElementById("imagePreview").style.display = "none";
               }
             });
           });
@@ -396,35 +450,35 @@ document
     }
   });
 
-  // Add new location
+// Add new location
 document
-.getElementById("addTypeForm")
-.addEventListener("submit", function (e) {
-  e.preventDefault();
+  .getElementById("addTypeForm")
+  .addEventListener("submit", function (e) {
+    e.preventDefault();
 
-  const typeName = document.getElementById("typeName").value;
+    const typeName = document.getElementById("typeName").value;
 
-  if (typeName) {
-    const newType = { name: typeName };
+    if (typeName) {
+      const newType = { name: typeName };
 
-    // Post the new location
-    fetch("/types", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newType),
-    }).then((response) => {
-      if (response.ok) {
-        // Reload locations to update dropdown
-        loadTypes();
+      // Post the new location
+      fetch("/types", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newType),
+      }).then((response) => {
+        if (response.ok) {
+          // Reload locations to update dropdown
+          loadTypes();
 
-        // Reset form
-        document.getElementById("typeName").value = "";
-      }
-    });
-  }
-});
+          // Reset form
+          document.getElementById("typeName").value = "";
+        }
+      });
+    }
+  });
 
 document.getElementById("enableEdit").addEventListener("click", () => {
   let items = document.querySelectorAll(".clothingItem");
@@ -534,21 +588,22 @@ document.getElementById("image").addEventListener("change", (event) => {
   reader.onload = () => {
     const base64Image = reader.result;
 
-    fetch(`https://colourdetector.vps.daecloud.co.za/detect-color`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ image: base64Image }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        document.getElementById("color").value = data.color;
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-      });
-
+    // fetch(`https://colourdetector.vps.daecloud.co.za/detect-color`, {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    //   body: JSON.stringify({ image: base64Image }),
+    // })
+    //   .then((response) => response.json())
+    //   .then((data) => {
+    //     console.log(data);
+    //     document.getElementById("color").value = data.color;
+    //   })
+    //   .catch((error) => {
+    //     console.error("Error:", error);
+    //   });
+    document.getElementById("imagePreview").style.display = "block";
     document.getElementById("imagePreview").src = base64Image;
   };
   reader.readAsDataURL(file);
