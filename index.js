@@ -17,6 +17,27 @@ app.use(express.static(path.join(__dirname, "public"))); // Serve static files
 const dbPath = path.join(__dirname, "data", "tracker.db");
 const db = new sqlite3.Database(dbPath);
 
+function addColumnIfNotExists(tableName, columnName, columnDefinition) {
+  db.all(`PRAGMA table_info(${tableName});`, (err, tableInfo) => {
+    if (err) {
+      console.error(`Error retrieving table info for ${tableName}:`, err);
+      return;
+    }
+
+    const columnExists = tableInfo.some(col => col.name === columnName);
+    if (!columnExists) {
+      console.log(`Adding missing column ${columnName} to ${tableName}`);
+      db.run(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDefinition};`, (err) => {
+        if (err) {
+          console.error(`Error adding column ${columnName} to ${tableName}:`, err);
+        } else {
+          console.log(`Column ${columnName} added to ${tableName}.`);
+        }
+      });
+    }
+  });
+}
+
 // Create tables if they don't exist
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS locations (
@@ -41,6 +62,8 @@ db.serialize(() => {
         image TEXT,  -- Add the image column here
         FOREIGN KEY (location_id) REFERENCES locations(id)
     )`);
+
+    addColumnIfNotExists("clothes", "closest_color", "TEXT");
 });
 
 // Endpoints
